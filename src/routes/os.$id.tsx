@@ -1,14 +1,6 @@
 import { createFileRoute, Link, useParams, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import {
-  ChevronRight,
-  Home,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-  Info,
-} from "lucide-react";
+import { ChevronRight, Home, Pencil, Plus, Trash2, X, Info } from "lucide-react";
 import { TopNav } from "@/components/top-nav";
 import { getOS, registros as mockRegistros, type Registro } from "@/lib/mock-data";
 
@@ -21,9 +13,7 @@ export const Route = createFileRoute("/os/$id")({
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: loaderData
-          ? `${loaderData.os.codigo} — AeroHoras`
-          : "Ordem de Serviço — AeroHoras",
+        title: loaderData ? `${loaderData.os.codigo} — AeroHoras` : "Ordem de Serviço — AeroHoras",
       },
       { name: "description", content: "Resumo da OS e registros de horas de voo." },
     ],
@@ -135,8 +125,7 @@ function OSDetail() {
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              Total acumulado:{" "}
-              <span className="font-semibold text-foreground">05:45 · 5,75h</span>
+              Total acumulado: <span className="font-semibold text-foreground">05:45 · 5,75h</span>
             </div>
           </header>
 
@@ -159,9 +148,7 @@ function OSDetail() {
                 {mockRegistros.map((r, i) => (
                   <tr
                     key={r.id}
-                    className={`border-t border-border ${
-                      i % 2 === 1 ? "bg-muted/30" : "bg-card"
-                    }`}
+                    className={`border-t border-border ${i % 2 === 1 ? "bg-muted/30" : "bg-card"}`}
                   >
                     <Td className="font-medium text-foreground">{r.data}</Td>
                     <Td className="font-mono text-foreground">{r.prefixo}</Td>
@@ -224,13 +211,7 @@ function Th({ children, className = "" }: { children: React.ReactNode; className
 function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-6 py-3.5 text-foreground/90 ${className}`}>{children}</td>;
 }
-function IconBtn({
-  children,
-  label,
-}: {
-  children: React.ReactNode;
-  label: string;
-}) {
+function IconBtn({ children, label }: { children: React.ReactNode; label: string }) {
   return (
     <button
       aria-label={label}
@@ -264,13 +245,7 @@ function calcTempo(inicio: string, fim: string): { hhmm: string; dec: string } {
   };
 }
 
-function RegisterModal({
-  os,
-  onClose,
-}: {
-  os: ReturnType<typeof getOS>;
-  onClose: () => void;
-}) {
+function RegisterModal({ os, onClose }: { os: ReturnType<typeof getOS>; onClose: () => void }) {
   const [voos, setVoos] = useState<VooRow[]>([
     { id: "v1", horaInicio: "07:30", horaFim: "09:45", plantao: false },
     { id: "v2", horaInicio: "13:10", horaFim: "15:40", plantao: false },
@@ -286,8 +261,7 @@ function RegisterModal({
       { id: `v${Date.now()}`, horaInicio: "", horaFim: "", plantao: false },
     ]);
 
-  const removeVoo = (id: string) =>
-    setVoos((prev) => prev.filter((v) => v.id !== id));
+  const removeVoo = (id: string) => setVoos((prev) => prev.filter((v) => v.id !== id));
 
   return (
     <div
@@ -295,10 +269,7 @@ function RegisterModal({
       role="dialog"
       aria-modal="true"
     >
-      <div
-        className="absolute inset-0 bg-[#061D2B]/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-[#061D2B]/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative flex max-h-[92vh] w-full max-w-[820px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         {/* Header */}
         <header className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -328,20 +299,13 @@ function RegisterModal({
             />
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="Prefixo">
-                <input
-                  className={inputClass}
-                  placeholder="XX-XXX"
-                  defaultValue="PR-DIV"
-                />
+                <input className={inputClass} placeholder="XX-XXX" defaultValue="PR-DIV" />
               </Field>
               <Field label="Data">
                 <input type="date" className={inputClass} defaultValue="2024-08-14" />
               </Field>
               <Field label="Piloto">
-                <input
-                  className={inputClass}
-                  defaultValue="Cmte. Ricardo Andrade"
-                />
+                <input className={inputClass} defaultValue="Cmte. Ricardo Andrade" />
               </Field>
               <Field label="Unidade de Conservação">
                 <select className={inputClass} defaultValue="chapada">
@@ -385,9 +349,7 @@ function RegisterModal({
                             type="time"
                             disabled={v.plantao}
                             value={v.horaInicio}
-                            onChange={(e) =>
-                              updateVoo(v.id, { horaInicio: e.target.value })
-                            }
+                            onChange={(e) => updateVoo(v.id, { horaInicio: e.target.value })}
                             className={compactInput}
                           />
                         </td>
@@ -488,13 +450,7 @@ function SectionTitle({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -505,13 +461,7 @@ function Field({
   );
 }
 
-function Switch({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
+function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"

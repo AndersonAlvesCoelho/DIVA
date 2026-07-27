@@ -14,7 +14,7 @@ function getInitials(name: string): string {
 
 export function TopNav() {
   const { logout } = useAuth();
-  const { user, isLoading } = useUser();
+  const { user, isLoading, photoUrl } = useUser();
 
   const initials = user?.displayName ? getInitials(user.displayName) : "?";
   const firstName = user?.displayName?.split(" ")[0] ?? "";
@@ -55,7 +55,15 @@ export function TopNav() {
               </div>
 
               <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-primary-soft text-sm font-semibold text-primary">
-                {initials}
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt={user.displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
               </div>
             </>
           )}

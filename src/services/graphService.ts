@@ -44,6 +44,20 @@ export interface GraphUser {
 
 export const getMe = (): Promise<GraphUser> => callGraph<GraphUser>("/me");
 
+export async function getUserPhoto(): Promise<string | null> {
+  try {
+    const token = await getToken();
+    const response = await fetch("https://graph.microsoft.com/v1.0/me/photo/$value", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
+
 // ── OneDrive ───────────────────────────────────────────────────────────────
 
 export interface DriveItem {

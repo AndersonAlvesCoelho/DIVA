@@ -53,59 +53,60 @@
 :root {
   --radius: 0.75rem;
 
-  --background: #F7FBFD;
-  --foreground: #0B1E2A;
+  --background: #f7fbfd;
+  --foreground: #0b1e2a;
 
-  --card: #FFFFFF;
-  --card-foreground: #0B1E2A;
+  --card: #ffffff;
+  --card-foreground: #0b1e2a;
 
-  --popover: #FFFFFF;
-  --popover-foreground: #0B1E2A;
+  --popover: #ffffff;
+  --popover-foreground: #0b1e2a;
 
   --primary: #005480;
-  --primary-foreground: #F9FCFE;
-  --primary-glow: #0094C9;
-  --primary-soft: #E6F1F7;
+  --primary-foreground: #f9fcfe;
+  --primary-glow: #0094c9;
+  --primary-soft: #e6f1f7;
 
-  --secondary: #EDF3F6;
-  --secondary-foreground: #0B1E2A;
+  --secondary: #edf3f6;
+  --secondary-foreground: #0b1e2a;
 
-  --muted: #EDF3F6;
-  --muted-foreground: #5F6B74;
+  --muted: #edf3f6;
+  --muted-foreground: #5f6b74;
 
-  --accent: #E6F1F7;
+  --accent: #e6f1f7;
   --accent-foreground: #005480;
 
-  --destructive: #DF202E;
-  --destructive-foreground: #F9FCFE;
+  --destructive: #df202e;
+  --destructive-foreground: #f9fcfe;
 
-  --success: #269E5F;
-  --success-foreground: #F9FCFE;
-  --success-soft: #E4F5EC;
+  --success: #269e5f;
+  --success-foreground: #f9fcfe;
+  --success-soft: #e4f5ec;
 
-  --warning: #EFA831;
-  --warning-foreground: #3A2704;
-  --warning-soft: #FDF1DC;
+  --warning: #efa831;
+  --warning-foreground: #3a2704;
+  --warning-soft: #fdf1dc;
 
-  --border: #DEE6EA;
-  --input: #DEE6EA;
-  --ring: #0094C9;
+  --border: #dee6ea;
+  --input: #dee6ea;
+  --ring: #0094c9;
 
-  --sidebar: #061D2B;
-  --sidebar-foreground: #DEE6EA;
-  --sidebar-accent: #122C3D;
-  --sidebar-accent-foreground: #F9FCFE;
-  --sidebar-primary: #0094C9;
-  --sidebar-primary-foreground: #F9FCFE;
-  --sidebar-border: #122C3D;
-  --sidebar-ring: #0094C9;
+  --sidebar: #061d2b;
+  --sidebar-foreground: #dee6ea;
+  --sidebar-accent: #122c3d;
+  --sidebar-accent-foreground: #f9fcfe;
+  --sidebar-primary: #0094c9;
+  --sidebar-primary-foreground: #f9fcfe;
+  --sidebar-border: #122c3d;
+  --sidebar-ring: #0094c9;
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
