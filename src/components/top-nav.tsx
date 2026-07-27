@@ -1,4 +1,4 @@
-import { useUser } from "@/auth/UserContext";
+import { useUser } from "@/context/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "@tanstack/react-router";
 import { LogOut, Plane } from "lucide-react";

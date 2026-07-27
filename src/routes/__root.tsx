@@ -1,5 +1,5 @@
 import { AuthProvider } from "@/auth/AuthProvider";
-import { UserProvider } from "@/auth/UserContext";
+import { UserProvider } from "@/context/UserContext";
 import { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Link, Outlet } from "@tanstack/react-router";
 

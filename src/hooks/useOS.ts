@@ -60,3 +60,9 @@ export function useOSList() {
     isError: rotativaQuery.isError || fixaQuery.isError,
   };
 }
+
+export function useOSById(id: string) {
+  const { data, isLoading, isError } = useOSList();
+  const os = data.find((item) => (item as Record<string, unknown>)["Ordem de Servico"] === id);
+  return { os: os as OSReal | undefined, isLoading, isError };
+}

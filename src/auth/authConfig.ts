@@ -1,8 +1,5 @@
 import { Configuration } from "@azure/msal-browser";
 
-console.log("CLIENT_ID:", import.meta.env.VITE_MSAL_CLIENT_ID);
-console.log("TENANT_ID:", import.meta.env.VITE_MSAL_TENANT_ID);
-
 export const msalConfig: Configuration = {
   auth: {
     clientId: import.meta.env.VITE_MSAL_CLIENT_ID as string,
