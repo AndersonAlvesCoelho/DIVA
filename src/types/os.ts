@@ -19,3 +19,33 @@ export interface OSReal {
   Status: string;
   tipo: "Rotativa" | "Fixa";
 }
+
+export interface RegistroVoo {
+  Contrato: string;
+  Empresa: string;
+  "Unidade Solicitante": string;
+  Acionamento: string;
+  Base: string;
+  "Status do Contrato": string;
+  "Data do Voo": string;
+  Partida: string;
+  Corte: string;
+  "Tempo de Voo": string;
+  Decimais: string;
+  Plantão: string;
+  Objetivo: string;
+  Bioma: string;
+  Unidade: string;
+  "Modelo - Aeronave": string;
+  "Prefixo Aeronave": string;
+  Piloto: string;
+}
+
+export interface UseOSByIdReturn {
+  os: OSReal | undefined;
+  isLoading: boolean;
+  isError: boolean;
+}
+
+export type OSStatus = "Vigente" | "Encerrado" | "Cancelado";
+export type OSTipo = "Rotativa" | "Fixa";

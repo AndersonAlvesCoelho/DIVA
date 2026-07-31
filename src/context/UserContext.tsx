@@ -1,4 +1,4 @@
-import { getMe, getUserPhoto } from "@/services/graphService";
+import { userService } from "@/services/userService";
 import { GraphUser } from "@/types/user";
 import { useIsAuthenticated } from "@azure/msal-react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -29,7 +29,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    Promise.all([getMe(), getUserPhoto()])
+    Promise.all([userService.getMe(), userService.getUserPhoto()])
       .then(([userData, photo]) => {
         setUser(userData);
         setPhotoUrl(photo);

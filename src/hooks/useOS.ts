@@ -1,35 +1,39 @@
-import { getTableColumns, getTableRows } from "@/services/graphService";
-import { OSReal } from "@/types/os";
+import { excelConfig } from "@/auth/authConfig";
+import { excelService } from "@/services/excelService";
+import type { OSReal } from "@/types/os";
+import { ApplyPriority, castRows, OSComPriority, rowsToObjects } from "@/utils/excel";
 import { useIsAuthenticated } from "@azure/msal-react";
 import { useQuery } from "@tanstack/react-query";
-import { excelConfig } from "../auth/authConfig";
+import { useMemo, useState } from "react";
+import { useDebounce } from "./useDebounce";
 
-function rowsToObjects(
-  columns: { name: string }[],
-  rows: { values: unknown[][] }[],
-): Record<string, unknown>[] {
-  return rows.map((row) => {
-    const obj: Record<string, unknown> = {};
-    columns.forEach((col, i) => {
-      obj[col.name] = row.values[0][i];
-    });
-    return obj;
-  });
+const itemId = excelConfig.driveItemId;
+
+const safeStr = (val: unknown) => String(val ?? "").toLowerCase();
+
+interface UseOSListReturn {
+  data: OSComPriority[];
+  datFilter: OSComPriority[];
+  search: string;
+  setSearch: (value: string) => void;
+  isLoading: boolean;
+  isError: boolean;
 }
 
-export function useOSList() {
+export function useOSList(): UseOSListReturn {
   const isAuthenticated = useIsAuthenticated();
-  const itemId = excelConfig.driveItemId;
+  const [search, setSearch] = useState("");
+  const searchDebounced = useDebounce(search, 300);
 
   const rotativaQuery = useQuery({
     queryKey: ["os", "rotativa"],
     enabled: isAuthenticated && !!itemId,
-    queryFn: async () => {
+    queryFn: async (): Promise<OSReal[]> => {
       const [cols, rows] = await Promise.all([
-        getTableColumns(itemId, excelConfig.tables.voosAR),
-        getTableRows(itemId, excelConfig.tables.voosAR),
+        excelService.getTableColumns(itemId, excelConfig.tables.voosAR),
+        excelService.getTableRows(itemId, excelConfig.tables.voosAR),
       ]);
-      return rowsToObjects(cols.value, rows.value).map((r) => ({
+      return castRows<OSReal>(rowsToObjects(cols, rows)).map((r) => ({
         ...r,
         tipo: "Rotativa" as const,
       }));
@@ -39,31 +43,45 @@ export function useOSList() {
   const fixaQuery = useQuery({
     queryKey: ["os", "fixa"],
     enabled: isAuthenticated && !!itemId,
-    queryFn: async () => {
+    queryFn: async (): Promise<OSReal[]> => {
       const [cols, rows] = await Promise.all([
-        getTableColumns(itemId, excelConfig.tables.voosAF),
-        getTableRows(itemId, excelConfig.tables.voosAF),
+        excelService.getTableColumns(itemId, excelConfig.tables.voosAF),
+        excelService.getTableRows(itemId, excelConfig.tables.voosAF),
       ]);
-      return rowsToObjects(cols.value, rows.value).map((r) => ({
+      return castRows<OSReal>(rowsToObjects(cols, rows)).map((r) => ({
         ...r,
         tipo: "Fixa" as const,
       }));
     },
   });
 
-  const allOS = [...(rotativaQuery.data ?? []), ...(fixaQuery.data ?? [])].filter(
-    (os) => os["Status do Contrato"] === "Vigente",
+  const data = useMemo(
+    () =>
+      ApplyPriority(
+        [...(rotativaQuery.data ?? []), ...(fixaQuery.data ?? [])].filter(
+          (os) => os["Status do Contrato"] === "Vigente",
+        ),
+      ),
+    [rotativaQuery.data, fixaQuery.data],
   );
 
+  const datFilter = useMemo(() => {
+    if (!searchDebounced) return data;
+    const q = searchDebounced.toLowerCase();
+    return data.filter(
+      (os) =>
+        safeStr(os["Ordem de Servico"]).includes(q) ||
+        safeStr(os.Contrato).includes(q) ||
+        safeStr(os.Empresa).includes(q),
+    );
+  }, [data, searchDebounced]);
+
   return {
-    data: allOS,
+    data,
+    datFilter,
+    search,
+    setSearch,
     isLoading: rotativaQuery.isLoading || fixaQuery.isLoading,
     isError: rotativaQuery.isError || fixaQuery.isError,
   };
-}
-
-export function useOSById(id: string) {
-  const { data, isLoading, isError } = useOSList();
-  const os = data.find((item) => (item as Record<string, unknown>)["Ordem de Servico"] === id);
-  return { os: os as OSReal | undefined, isLoading, isError };
 }
