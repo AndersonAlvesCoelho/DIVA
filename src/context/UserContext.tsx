@@ -1,4 +1,5 @@
-import { getMe, getUserPhoto, type GraphUser } from "@/services/graphService";
+import { getMe, getUserPhoto } from "@/services/graphService";
+import { GraphUser } from "@/types/user";
 import { useIsAuthenticated } from "@azure/msal-react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 

@@ -14,10 +14,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     msalInstance.initialize().then(() => {
-      const accounts = msalInstance.getAllAccounts();
-      if (accounts.length > 0) {
-        msalInstance.setActiveAccount(accounts[0]);
-      }
+      msalInstance.handleRedirectPromise().then((result) => {
+        if (result?.account) {
+          msalInstance.setActiveAccount(result.account);
+        }
+
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          msalInstance.setActiveAccount(accounts[0]);
+        }
+      });
 
       msalInstance.addEventCallback((event) => {
         if (

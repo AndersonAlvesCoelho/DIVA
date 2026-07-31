@@ -1,4 +1,4 @@
-import { TopNav } from "@/components/top-nav";
+import { TopNav } from "@/components/TopNav";
 import { useOSList } from "@/hooks/useOS";
 import type { OSReal } from "@/types/os";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -8,7 +8,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/os/")({
   head: () => ({
     meta: [
-      { title: "Ordens de Serviço — AeroHoras" },
+      { title: "Ordens de Serviço — Altas Horas" },
       { name: "description", content: "Selecione a Ordem de Serviço da operação aérea atual." },
     ],
   }),

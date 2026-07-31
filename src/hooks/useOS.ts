@@ -1,7 +1,8 @@
+import { getTableColumns, getTableRows } from "@/services/graphService";
+import { OSReal } from "@/types/os";
 import { useIsAuthenticated } from "@azure/msal-react";
 import { useQuery } from "@tanstack/react-query";
 import { excelConfig } from "../auth/authConfig";
-import { getTableColumns, getTableRows } from "../services/graphService";
 
 function rowsToObjects(
   columns: { name: string }[],

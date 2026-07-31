@@ -1,5 +1,5 @@
 import { DialogRegister } from "@/components/os/RegisterModal";
-import { TopNav } from "@/components/top-nav";
+import { TopNav } from "@/components/TopNav";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,7 +16,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/os/$id")({
   head: () => ({
     meta: [
-      { title: "Ordem de Serviço — AeroHoras" },
+      { title: "Ordem de Serviço — Altas Horas" },
       { name: "description", content: "Resumo da OS e registros de horas de voo." },
     ],
   }),
