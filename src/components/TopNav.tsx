@@ -1,16 +1,8 @@
 import { useUser } from "@/context/UserContext";
 import { useAuth } from "@/hooks/useAuth";
+import { getInitials } from "@/utils/helper";
 import { Link } from "@tanstack/react-router";
 import { LogOut, Plane } from "lucide-react";
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
-    .join("");
-}
 
 export function TopNav() {
   const { logout } = useAuth();
@@ -27,22 +19,12 @@ export function TopNav() {
             <Plane className="h-5 w-5" />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-foreground">AeroHoras</span>
+            <span className="text-sm font-semibold text-foreground">Altas Horas</span>
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               ICMBio · DIVA
             </span>
           </div>
         </Link>
-
-        <nav className="ml-6 hidden items-center gap-1 md:flex">
-          <Link
-            to="/os"
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-            activeProps={{ className: "bg-primary-soft text-primary" }}
-          >
-            Ordens de Serviço
-          </Link>
-        </nav>
 
         <div className="ml-auto flex items-center gap-3">
           {!isLoading && user && (

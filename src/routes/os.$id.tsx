@@ -1,5 +1,5 @@
 import { DialogRegister } from "@/components/os/RegisterModal";
-import { TopNav } from "@/components/top-nav";
+import { TopNav } from "@/components/TopNav";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,7 +16,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/os/$id")({
   head: () => ({
     meta: [
-      { title: "Ordem de Serviço — AeroHoras" },
+      { title: "Ordem de Serviço — Altas Horas" },
       { name: "description", content: "Resumo da OS e registros de horas de voo." },
     ],
   }),
@@ -55,7 +55,97 @@ function OSDetail() {
     ["Qtd. Aeronaves", os["Quantidade de Aeronaves"]],
   ];
 
-  
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      <TopNav />
+
+      <DialogRegister
+        os={os}
+        open={openModal}
+        onOpenChange={setOpenModal}
+        onSave={(voos, campos) => {
+          console.log("Salvar:", voos, campos);
+        }}
+      />
+
+      <main className="mx-auto max-w-[1400px] px-6 py-8">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink>
+                <Link to="/os" className="inline-flex items-center gap-1.5">
+                  <Home className="h-3.5 w-3.5" />
+                  Ordens de Serviço
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{os["Ordem de Servico"]}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {/* Header  */}
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  vigente ? "bg-success-soft text-success" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${vigente ? "bg-success" : "bg-muted-foreground"}`}
+                />
+                {os["Status do Contrato"]}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
+                {os.tipo}
+              </span>
+            </div>
+            <h1 className="text-2xl font-semibold text-foreground">{os["Ordem de Servico"]}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {os.Contrato} · {os.Empresa}
+            </p>
+          </div>
+        </div>
+
+        {/* Resumo */}
+        <section className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(6,29,43,0.04)]">
+          <header className="flex items-center justify-between border-b border-border px-6 py-4">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Resumo da OS</h2>
+              <p className="text-xs text-muted-foreground">
+                Dados do contrato e da operação em curso.
+              </p>
+            </div>
+          </header>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-5 p-6 sm:grid-cols-2 lg:grid-cols-3">
+            {campos.map(([label, value]) => (
+              <div key={label} className="min-w-0">
+                <dt className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {label}
+                </dt>
+                <dd className="mt-1 truncate text-sm font-semibold text-foreground">
+                  {String(value ?? "—")}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      </main>
+
+      <button
+        onClick={() => setOpenModal(true)}
+        className="fixed bottom-8 right-8 z-20 inline-flex items-center gap-2 rounded-[10px] bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(0,84,128,0.55)] transition-all hover:opacity-95"
+      >
+        <Plus className="h-4 w-4" />
+        Novo Registro
+      </button>
+    </div>
+  );
+}
 
 // ── Estados de loading e erro ───────────────────────────────────────────────
 

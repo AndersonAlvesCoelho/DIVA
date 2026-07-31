@@ -33,7 +33,7 @@ async function callGraph<T>(url: string, options: RequestInit = {}): Promise<T> 
   return response.json() as Promise<T>;
 }
 
-// ── Usuário ────────────────────────────────────────────────────────────────
+// ── Usuário 
 
 export interface GraphUser {
   displayName: string;
@@ -58,7 +58,7 @@ export async function getUserPhoto(): Promise<string | null> {
   }
 }
 
-// ── OneDrive ───────────────────────────────────────────────────────────────
+// ── OneDrive 
 
 export interface DriveItem {
   id: string;
@@ -73,7 +73,7 @@ export const getDriveFiles = (): Promise<{ value: DriveItem[] }> =>
 export const searchDriveFile = (name: string): Promise<{ value: DriveItem[] }> =>
   callGraph<{ value: DriveItem[] }>(`/me/drive/root/search(q='${name}')`);
 
-// ── Excel — Leitura ────────────────────────────────────────────────────────
+// ── Excel — Leitura 
 
 export interface ExcelRow {
   index: number;
@@ -91,7 +91,7 @@ export const getTableColumns = (
     `/me/drive/items/${itemId}/workbook/tables/${tableName}/columns`,
   );
 
-// ── Excel — Escrita ────────────────────────────────────────────────────────
+// ── Excel — Escrita 
 
 export const addTableRow = (
   itemId: string,
@@ -103,7 +103,7 @@ export const addTableRow = (
     body: JSON.stringify({ values: [values] }),
   });
 
-// ── SharePoint ─────────────────────────────────────────────────────────────
+// ── SharePoint 
 
 export interface SharePointSite {
   id: string;
@@ -124,16 +124,16 @@ export const getSharePointTableRows = (
     `/sites/${siteId}/drive/items/${itemId}/workbook/tables/${tableName}/rows`,
   );
 
-export const addSharePointTableRow = (
-  siteId: string,
-  itemId: string,
-  tableName: string,
-  values: unknown[],
-): Promise<ExcelRow> =>
-  callGraph<ExcelRow>(
-    `/sites/${siteId}/drive/items/${itemId}/workbook/tables/${tableName}/rows/add`,
-    {
-      method: "POST",
-      body: JSON.stringify({ values: [values] }),
-    },
-  );
+  export const addSharePointTableRow = (
+    siteId: string,
+    itemId: string,
+    tableName: string,
+    values: unknown[],
+  ): Promise<ExcelRow> =>
+    callGraph<ExcelRow>(
+      `/sites/${siteId}/drive/items/${itemId}/workbook/tables/${tableName}/rows/add`,
+      {
+        method: "POST",
+        body: JSON.stringify({ values: [values] }),
+      },
+    );
