@@ -83,12 +83,12 @@
       <h3>Configuração</h3>
       <div class="info">Cole seu Client ID e Tenant ID antes de testar</div>
       <div style="margin: 10px 0">
-        <label>Client ID:</label>
-        <input id="clientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        <label>Client ID:</label
+        ><input id="clientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
       </div>
       <div style="margin: 10px 0">
-        <label>Tenant ID:</label>
-        <input id="tenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        <label>Tenant ID:</label
+        ><input id="tenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
       </div>
       <button onclick="inicializar()">Inicializar</button>
       <div id="status">Aguardando configuração...</div>
@@ -119,7 +119,12 @@
       <h3>3. OneDrive — listar arquivos</h3>
       <div class="info">Lista arquivos de uma pasta. Deixe vazio para listar a raiz.</div>
       <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
-        <input id="pathPasta" type="text" placeholder="Ex: DIVA/Planilhas (vazio = raiz)" style="flex: 1" />
+        <input
+          id="pathPasta"
+          type="text"
+          placeholder="Ex: DIVA/Planilhas (vazio = raiz)"
+          style="flex: 1"
+        />
         <button id="btnOneDrive" onclick="listarArquivos()" disabled>Listar</button>
       </div>
       <div id="resultOneDrive" class="result">Aguardando login...</div>
@@ -202,6 +207,48 @@
       <div id="resultSites" class="result">Aguardando login...</div>
     </div>
 
+    <div class="card">
+      <h3>9. Colunas de uma tabela</h3>
+      <div class="info">Lista as colunas de uma tabela Excel com id, nome e índice</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="driveIdCols"
+          type="text"
+          placeholder="Drive Item ID"
+          style="flex: 1; min-width: 200px"
+        />
+        <input
+          id="nomeTabCols"
+          type="text"
+          placeholder="Nome da tabela"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnCols" onclick="listarColunas()" disabled>Listar colunas</button>
+      </div>
+      <div id="resultCols" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>10. Header row de uma tabela</h3>
+      <div class="info">Busca os cabeçalhos via headerRowRange — mais confiável que /columns</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="driveIdHeader"
+          type="text"
+          placeholder="Drive Item ID"
+          style="flex: 1; min-width: 200px"
+        />
+        <input
+          id="nomeTabHeader"
+          type="text"
+          placeholder="Nome da tabela"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnHeader" onclick="listarHeader()" disabled>Buscar cabeçalhos</button>
+      </div>
+      <div id="resultHeader" class="result">Aguardando login...</div>
+    </div>
+
     <script>
       var msalInstance = null;
       var tokenAtual = null;
@@ -213,6 +260,8 @@
         "btnLerTabela",
         "btnSite",
         "btnSites",
+        "btnCols",
+        "btnHeader",
         "btnLogout",
       ];
 
@@ -223,7 +272,6 @@
           alert("Preencha o Client ID e o Tenant ID");
           return;
         }
-
         msalInstance = new msal.PublicClientApplication({
           auth: {
             clientId: clientId,
@@ -232,7 +280,6 @@
           },
           cache: { cacheLocation: "sessionStorage" },
         });
-
         msalInstance.initialize().then(function () {
           document.getElementById("status").textContent = "✅ Configurado — faça o login";
           document.getElementById("btnLogin").disabled = false;
@@ -246,18 +293,16 @@
             scopes: ["User.Read", "Files.ReadWrite", "Sites.ReadWrite.All"],
             account: accounts[0],
           })
-          .then(function (result) {
-            return result.accessToken;
+          .then(function (r) {
+            return r.accessToken;
           });
       }
 
       function fetchGraph(url) {
         return getToken().then(function (token) {
-          return fetch(url, {
-            headers: { Authorization: "Bearer " + token },
-          }).then(function (response) {
-            return response.json().then(function (data) {
-              return { response: response, data: data };
+          return fetch(url, { headers: { Authorization: "Bearer " + token } }).then(function (r) {
+            return r.json().then(function (d) {
+              return { response: r, data: d };
             });
           });
         });
@@ -316,6 +361,51 @@
           });
       }
 
+      function listarArquivos() {
+        var path = document.getElementById("pathPasta").value.trim();
+        var url = path
+          ? "https://graph.microsoft.com/v1.0/me/drive/root:/" +
+            encodeURIComponent(path) +
+            ":/children"
+          : "https://graph.microsoft.com/v1.0/me/drive/root/children";
+        document.getElementById("resultOneDrive").textContent = "Carregando...";
+        fetchGraph(url)
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (f) {
+                return (
+                  (f.folder ? "📁" : "📄") +
+                  " " +
+                  f.name +
+                  "\n   ID: " +
+                  f.id +
+                  "\n   Tipo: " +
+                  (f.folder
+                    ? "📁 pasta (" + (f.folder.childCount || 0) + " itens)"
+                    : f.file
+                      ? f.file.mimeType
+                      : "desconhecido") +
+                  "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultOneDrive").className = "result ok";
+            document.getElementById("resultOneDrive").textContent =
+              "✅ " +
+              result.data.value.length +
+              ' itens em "' +
+              (path || "raiz") +
+              '":\n\n' +
+              linhas;
+          })
+          .catch(function (e) {
+            document.getElementById("resultOneDrive").className = "result erro";
+            document.getElementById("resultOneDrive").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
       function buscarArquivo() {
         var nome = document.getElementById("nomeArquivo").value.trim();
         if (!nome) {
@@ -351,8 +441,11 @@
             document.getElementById("resultBusca").textContent =
               "✅ " + result.data.value.length + " resultado(s):\n\n" + linhas;
             if (result.data.value[0]) {
-              document.getElementById("driveItemId").value = result.data.value[0].id;
-              document.getElementById("driveItemIdTabela").value = result.data.value[0].id;
+              var id = result.data.value[0].id;
+              document.getElementById("driveItemId").value = id;
+              document.getElementById("driveItemIdTabela").value = id;
+              document.getElementById("driveIdCols").value = id;
+              document.getElementById("driveIdHeader").value = id;
             }
           })
           .catch(function (e) {
@@ -362,44 +455,33 @@
           });
       }
 
-      function listarArquivos() {
-        var path = document.getElementById("pathPasta").value.trim();
-        var url = path
-          ? "https://graph.microsoft.com/v1.0/me/drive/root:/" +
-            encodeURIComponent(path) +
-            ":/children"
-          : "https://graph.microsoft.com/v1.0/me/drive/root/children";
-
-        document.getElementById("resultOneDrive").textContent = "Carregando...";
-
-        fetchGraph(url)
+      function listarTabelas() {
+        var itemId = document.getElementById("driveItemId").value.trim();
+        if (!itemId) {
+          alert("Cole o Drive Item ID primeiro");
+          return;
+        }
+        document.getElementById("resultTabelas").textContent = "Carregando...";
+        fetchGraph("https://graph.microsoft.com/v1.0/me/drive/items/" + itemId + "/workbook/tables")
           .then(function (result) {
             if (!result.response.ok) throw result.data;
-            var itens = result.data.value;
-            var linhas = itens
-              .map(function (f) {
-                var tipo = f.folder ? "📁 pasta" : f.file ? f.file.mimeType : "desconhecido";
-                return (
-                  (f.folder ? "📁" : "📄") +
-                  " " +
-                  f.name +
-                  "\n   ID: " +
-                  f.id +
-                  "\n   Tipo: " +
-                  tipo +
-                  (f.folder ? "\n   Itens: " + (f.folder.childCount || 0) : "") +
-                  "\n"
-                );
+            var linhas = result.data.value
+              .map(function (t) {
+                return "📊 " + t.name + " (id: " + t.id + ")";
               })
               .join("\n");
-
-            document.getElementById("resultOneDrive").className = "result ok";
-            document.getElementById("resultOneDrive").textContent =
-              "✅ " + itens.length + ' itens em "' + (path || "raiz") + '":\n\n' + linhas;
+            document.getElementById("resultTabelas").className = "result ok";
+            document.getElementById("resultTabelas").textContent =
+              "✅ " +
+              result.data.value.length +
+              " tabela(s):\n\n" +
+              linhas +
+              "\n\nVITE_EXCEL_DRIVE_ITEM_ID=" +
+              itemId;
           })
           .catch(function (e) {
-            document.getElementById("resultOneDrive").className = "result erro";
-            document.getElementById("resultOneDrive").textContent =
+            document.getElementById("resultTabelas").className = "result erro";
+            document.getElementById("resultTabelas").textContent =
               "❌ Erro:\n" + JSON.stringify(e, null, 2);
           });
       }
@@ -432,6 +514,83 @@
           .catch(function (e) {
             document.getElementById("resultLerTabela").className = "result erro";
             document.getElementById("resultLerTabela").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarColunas() {
+        var itemId = document.getElementById("driveIdCols").value.trim();
+        var tabela = document.getElementById("nomeTabCols").value.trim();
+        if (!itemId || !tabela) {
+          alert("Preencha o Drive Item ID e o nome da tabela");
+          return;
+        }
+        document.getElementById("resultCols").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/me/drive/items/" +
+            itemId +
+            "/workbook/tables/" +
+            tabela +
+            "/columns",
+        )
+          .then(function (result) {
+            if (!result.response.ok) {
+              document.getElementById("resultCols").className = "result erro";
+              document.getElementById("resultCols").textContent =
+                "❌ Erro:\n" + JSON.stringify(result.data, null, 2);
+              return;
+            }
+            var colunas = (result.data.value || []).map(function (c) {
+              return { id: c.id, index: c.index, name: c.name };
+            });
+            document.getElementById("resultCols").className = "result ok";
+            document.getElementById("resultCols").textContent =
+              "✅ " + colunas.length + " coluna(s):\n\n" + JSON.stringify(colunas, null, 2);
+          })
+          .catch(function (e) {
+            document.getElementById("resultCols").className = "result erro";
+            document.getElementById("resultCols").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarHeader() {
+        var itemId = document.getElementById("driveIdHeader").value.trim();
+        var tabela = document.getElementById("nomeTabHeader").value.trim();
+        if (!itemId || !tabela) {
+          alert("Preencha o Drive Item ID e o nome da tabela");
+          return;
+        }
+        document.getElementById("resultHeader").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/me/drive/items/" +
+            itemId +
+            "/workbook/tables/" +
+            tabela +
+            "/headerRowRange",
+        )
+          .then(function (result) {
+            if (!result.response.ok) {
+              document.getElementById("resultHeader").className = "result erro";
+              document.getElementById("resultHeader").textContent =
+                "❌ Erro:\n" + JSON.stringify(result.data, null, 2);
+              return;
+            }
+            var headers = (result.data.values || [[]])[0];
+            document.getElementById("resultHeader").className = "result ok";
+            document.getElementById("resultHeader").textContent =
+              "✅ " +
+              headers.length +
+              " cabeçalho(s):\n\n" +
+              headers
+                .map(function (h, i) {
+                  return i + ": " + h;
+                })
+                .join("\n");
+          })
+          .catch(function (e) {
+            document.getElementById("resultHeader").className = "result erro";
+            document.getElementById("resultHeader").textContent =
               "❌ Erro:\n" + JSON.stringify(e, null, 2);
           });
       }

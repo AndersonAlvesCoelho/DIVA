@@ -1,11 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { OSComPriority } from "@/utils/excel";
 import { parseHoras } from "@/utils/helper";
 import { formatDateBR, parseDateBR } from "@/utils/utils";
-import { Calendar, MapPin, Plane } from "lucide-react";
+import { Calendar, Helicopter, MapPin, Plane } from "lucide-react";
 
 // ── Config de prioridade
 const prioridadeConfig = {
@@ -40,7 +38,7 @@ interface OSCardProps {
 export default function OSCard({ os, selecionada, onSelecionar }: OSCardProps) {
   const config = prioridadeConfig[os.prioridade];
   const vigente = os["Status do Contrato"] === "Vigente";
-  const horas = parseHoras(os["Horas Acionadas"]);
+  const horas = parseFloat(parseHoras(os["Horas Acionadas"]).toFixed(2));
   const progresso = Math.min((horas / 100) * 100, 100); // ajustar quando tiver total real
 
   return (
@@ -62,16 +60,18 @@ export default function OSCard({ os, selecionada, onSelecionar }: OSCardProps) {
                   : "bg-muted text-muted-foreground"
             }`}
           >
-            <Plane className="h-5 w-5" />
+            {os.tipo === "Fixa" ? (
+              <Plane className="h-5 w-5" />
+            ) : (
+              <Helicopter className="h-5 w-5" />
+            )}
           </div>
 
           {/* Título */}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-base font-bold text-foreground">{os.Contrato}</span>
-              <Badge variant={vigente ? "default" : "secondary"}>
-                {vigente ? "Ativo" : os["Status do Contrato"]}
-              </Badge>
+              <span className="text-base font-bold text-foreground">{os["Ordem de Serviço"]}</span>
+              <Badge variant={vigente ? "default" : "secondary"}>{os.tipo}</Badge>
               <Badge className={config.badgeClass}>{config.label}</Badge>
             </div>
             <p className="mt-0.5 truncate text-sm text-muted-foreground">{os.Empresa}</p>
@@ -102,10 +102,10 @@ export default function OSCard({ os, selecionada, onSelecionar }: OSCardProps) {
           <Plane className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">
             {os["Modelo da Aeronave"]}
-            {os["Prefixo Aeronaves"] && os["Prefixo Aeronaves"] !== "Nao informado" && (
+            {os["Prefixo"] !== "Nao informado" && (
               <>
                 {" · "}
-                <span className="font-medium text-foreground">{os["Prefixo Aeronaves"]}</span>
+                <span className="font-medium text-foreground">{os["Prefixo"]}</span>
               </>
             )}
           </span>
@@ -121,23 +121,23 @@ export default function OSCard({ os, selecionada, onSelecionar }: OSCardProps) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
           <span>
-            {formatDateBR(parseDateBR(os["Inicio da Operacao"]))} – {os.endDateFormatted}
+            {formatDateBR(parseDateBR(os["Inicio da Operação"]))} – {os.endDateFormatted}
           </span>
         </div>
 
-        <Separator className="my-3" />
+        {/* <Separator className="my-3" /> */}
 
         {/* Progresso de horas */}
-        <div>
+        {/* <div>
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Horas acionadas</span>
-            <span className="font-semibold text-foreground">{os["Horas Acionadas"]}</span>
+            <span className="font-semibold text-foreground">{horas}</span>
           </div>
           <Progress
             value={progresso}
             className={`h-2 ${os.prioridade === 3 ? "opacity-50" : ""}`}
           />
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );

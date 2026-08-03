@@ -1,17 +1,4 @@
-export function calcTempo(inicio: string, fim: string): { hhmm: string; dec: string } {
-  if (!inicio || !fim) return { hhmm: "--:--", dec: "0,00" };
-  const [hi, mi] = inicio.split(":").map(Number);
-  const [hf, mf] = fim.split(":").map(Number);
-  if ([hi, mi, hf, mf].some((n) => Number.isNaN(n))) return { hhmm: "--:--", dec: "0,00" };
-  let diff = hf * 60 + mf - (hi * 60 + mi);
-  if (diff < 0) diff += 24 * 60;
-  const h = Math.floor(diff / 60);
-  const m = diff % 60;
-  return {
-    hhmm: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
-    dec: (diff / 60).toFixed(2).replace(".", ","),
-  };
-}
+import { parseExcelSerial } from "./excel";
 
 export function formatDateBR(date: Date | null): string {
   if (!date) return "—";
@@ -20,13 +7,6 @@ export function formatDateBR(date: Date | null): string {
     month: "2-digit",
     year: "numeric",
   });
-}
-
-export function parseExcelSerial(serial: number): Date {
-  // Excel serial: dias desde 01/01/1900, com bug do ano 1900
-  const MS_PER_DAY = 86400000;
-  const EXCEL_EPOCH = new Date(1899, 11, 30).getTime();
-  return new Date(EXCEL_EPOCH + serial * MS_PER_DAY);
 }
 
 export function parseDateBR(value: unknown): Date | null {

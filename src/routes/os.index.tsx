@@ -1,13 +1,11 @@
-import OSCard from "@/components/os/OSCard";
+import OSCard from "@/components/OSCard";
 import { TopNav } from "@/components/TopNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOSList } from "@/hooks/useOS";
-import type { OSReal } from "@/types/os";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Plane, Search } from "lucide-react";
-import { useState } from "react";
 
 export const Route = createFileRoute("/os/")({
   head: () => ({
@@ -20,21 +18,16 @@ export const Route = createFileRoute("/os/")({
 });
 
 function OSListPage() {
-  const navigate = useNavigate();
-  const { datFilter, search, setSearch, isLoading, isError } = useOSList();
-  const [osSelect, setOsSeelct] = useState<OSReal | null>(null);
-
-  const handleSelecionar = (os: OSReal) => {
-    setOsSeelct((prev) => (prev?.["Ordem de Servico"] === os["Ordem de Servico"] ? null : os));
-  };
-
-  const handleContinuar = () => {
-    if (!osSelect) return;
-    navigate({
-      to: "/os/$id",
-      params: { id: encodeURIComponent(osSelect["Ordem de Servico"]) },
-    });
-  };
+  const {
+    osSelect,
+    datFilter,
+    search,
+    setSearch,
+    isLoading,
+    isError,
+    handleOsSelect,
+    handleContinued,
+  } = useOSList();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -92,10 +85,10 @@ function OSListPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {datFilter.map((os) => (
                   <OSCard
-                    key={os["Ordem de Servico"]}
+                    key={os["Ordem de Serviço"]}
                     os={os}
-                    selecionada={osSelect?.["Ordem de Servico"] === os["Ordem de Servico"]}
-                    onSelecionar={() => handleSelecionar(os)}
+                    selecionada={osSelect?.["Ordem de Serviço"] === os["Ordem de Serviço"]}
+                    onSelecionar={() => handleOsSelect(os)}
                   />
                 ))}
               </div>
@@ -109,10 +102,10 @@ function OSListPage() {
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4">
           <span className="text-sm text-muted-foreground">
             {osSelect
-              ? `${osSelect["Ordem de Servico"]} selecionada`
+              ? `${osSelect["Ordem de Serviço"]} selecionada`
               : "Nenhum contrato selecionado"}
           </span>
-          <Button onClick={handleContinuar} disabled={!osSelect} className="gap-2">
+          <Button onClick={handleContinued} disabled={!osSelect} className="gap-2">
             Continuar para registro de horas
             <Plane className="h-4 w-4" />
           </Button>

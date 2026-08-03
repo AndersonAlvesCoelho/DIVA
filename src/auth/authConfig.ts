@@ -30,10 +30,11 @@ export const loginRequest = {
 export const excelConfig = {
   driveItemId: import.meta.env.VITE_EXCEL_DRIVE_ITEM_ID as string,
   tables: {
-    voosAR: "tbvoosAR",
-    voosAF: "tbvoosAF",
+    voosAR: "tbAcionamentoVoosAR",
+    voosAF: "tbAcionamentoVoosAF",
+    ucs: "TbUCnova",
     contratos: "tbContratos",
-    controleRotativa: "tbControleVoosRotativa",
-    controleFixa: "tbControleVoosFixa",
+    controleRotativa: "tbControleVoosAR",
+    controleFixa: "tbControleVoosAF",
   },
 };
