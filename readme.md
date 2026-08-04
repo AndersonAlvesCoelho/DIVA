@@ -4,7 +4,7 @@
 
 <!-- Substitua pela screenshot do projeto -->
 
-![Altas Horas Preview](public\print.png)
+![Altas Horas Preview](public/print.png)
 
 🔗 **[diva-beige.vercel.app](https://diva-beige.vercel.app)**
 
