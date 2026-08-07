@@ -1,0 +1,1331 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DIVA — Teste Microsoft Graph</title>
+    <script src="https://unpkg.com/@azure/msal-browser@3.10.0/lib/msal-browser.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #f5f5f5;
+      }
+      h1 {
+        color: #006633;
+      }
+      h2 {
+        color: #006633;
+        font-size: 16px;
+        margin: 30px 0 10px;
+        border-bottom: 2px solid #006633;
+        padding-bottom: 6px;
+      }
+      button {
+        background: #006633;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 5px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #004d26;
+      }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .card.sharepoint {
+        border-left: 4px solid #0078d4;
+      }
+      .result {
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        margin-top: 10px;
+        font-size: 13px;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .ok {
+        border-left: 4px solid #006633;
+      }
+      .erro {
+        border-left: 4px solid #dc2626;
+      }
+      .info {
+        color: #666;
+        font-size: 13px;
+        margin: 5px 0;
+      }
+      #status {
+        font-weight: bold;
+        color: #006633;
+        margin-top: 8px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin: 4px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🛩️ DIVA — Teste Microsoft Graph API</h1>
+
+    <div class="card">
+      <h3>Configuração</h3>
+      <div class="info">Cole seu Client ID e Tenant ID antes de testar</div>
+      <div style="margin: 10px 0">
+        <label>Client ID:</label
+        ><input id="clientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+      </div>
+      <div style="margin: 10px 0">
+        <label>Tenant ID:</label
+        ><input id="tenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+      </div>
+      <button onclick="inicializar()">Inicializar</button>
+      <div id="status">Aguardando configuração...</div>
+    </div>
+
+    <div class="card">
+      <h3>1. Autenticação</h3>
+      <div class="info">Login com conta @icmbio.gov.br</div>
+      <button id="btnLogin" onclick="login()" disabled>Login Microsoft</button>
+      <button id="btnLogout" onclick="logout()" disabled>Logout</button>
+      <div id="resultLogin" class="result">Aguardando...</div>
+    </div>
+
+    <div class="card">
+      <h3>2. Perfil do usuário (User.Read)</h3>
+      <div class="info">GET /me</div>
+      <button
+        id="btnPerfil"
+        onclick="testar('https://graph.microsoft.com/v1.0/me', 'resultPerfil')"
+        disabled
+      >
+        Testar
+      </button>
+      <div id="resultPerfil" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>3. OneDrive — listar arquivos</h3>
+      <div class="info">Lista arquivos de uma pasta. Deixe vazio para listar a raiz.</div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
+        <input
+          id="pathPasta"
+          type="text"
+          placeholder="Ex: DIVA/Planilhas (vazio = raiz)"
+          style="flex: 1"
+        />
+        <button id="btnOneDrive" onclick="listarArquivos()" disabled>Listar</button>
+      </div>
+      <div id="resultOneDrive" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>4. Buscar arquivo Excel por nome</h3>
+      <div class="info">Busca o arquivo Excel pelo nome e exibe o Drive Item ID</div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
+        <input
+          id="nomeArquivo"
+          type="text"
+          placeholder="Ex: CONTROLE DE AERONAVE DIVA"
+          style="flex: 1"
+        />
+        <button id="btnBuscar" onclick="buscarArquivo()" disabled>Buscar</button>
+      </div>
+      <div id="resultBusca" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>5. Verificar tabelas do Excel</h3>
+      <div class="info">Cole o Drive Item ID para listar as tabelas do arquivo</div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
+        <input
+          id="driveItemId"
+          type="text"
+          placeholder="Cole o Drive Item ID aqui"
+          style="flex: 1"
+        />
+        <button id="btnTabelas" onclick="listarTabelas()" disabled>Listar tabelas</button>
+      </div>
+      <div id="resultTabelas" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>6. Ler linhas de uma tabela Excel</h3>
+      <div class="info">Cole o Drive Item ID e o nome da tabela para ler as primeiras linhas</div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="driveItemIdTabela"
+          type="text"
+          placeholder="Drive Item ID"
+          style="flex: 1; min-width: 200px"
+        />
+        <input
+          id="nomeTabela"
+          type="text"
+          placeholder="Nome da tabela (ex: tbvoosAR)"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnLerTabela" onclick="lerTabela()" disabled>Ler tabela</button>
+      </div>
+      <div id="resultLerTabela" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>7. SharePoint — site raiz</h3>
+      <div class="info">GET /sites/root</div>
+      <button
+        id="btnSite"
+        onclick="testar('https://graph.microsoft.com/v1.0/sites/root', 'resultSite')"
+        disabled
+      >
+        Testar
+      </button>
+      <div id="resultSite" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>8. SharePoint — listar sites</h3>
+      <div class="info">GET /sites?search=* — lista todos os sites disponíveis</div>
+      <button
+        id="btnSites"
+        onclick="testar('https://graph.microsoft.com/v1.0/sites?search=*', 'resultSites')"
+        disabled
+      >
+        Testar
+      </button>
+      <div id="resultSites" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>9. Colunas de uma tabela</h3>
+      <div class="info">Lista as colunas de uma tabela Excel com id, nome e índice</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="driveIdCols"
+          type="text"
+          placeholder="Drive Item ID"
+          style="flex: 1; min-width: 200px"
+        />
+        <input
+          id="nomeTabCols"
+          type="text"
+          placeholder="Nome da tabela"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnCols" onclick="listarColunas()" disabled>Listar colunas</button>
+      </div>
+      <div id="resultCols" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card">
+      <h3>10. Header row de uma tabela</h3>
+      <div class="info">Busca os cabeçalhos via headerRowRange — mais confiável que /columns</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="driveIdHeader"
+          type="text"
+          placeholder="Drive Item ID"
+          style="flex: 1; min-width: 200px"
+        />
+        <input
+          id="nomeTabHeader"
+          type="text"
+          placeholder="Nome da tabela"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnHeader" onclick="listarHeader()" disabled>Buscar cabeçalhos</button>
+      </div>
+      <div id="resultHeader" class="result">Aguardando login...</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>🔷 SharePoint — Descoberta de IDs</h2>
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+
+    <div class="card sharepoint">
+      <h3>11. SharePoint — buscar site por nome</h3>
+      <div class="info">
+        Busca um site específico e retorna o siteId — necessário para os próximos passos
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
+        <input id="nomeSite" type="text" placeholder="Ex: diva, icmbio, intranet" style="flex: 1" />
+        <button id="btnBuscarSite" onclick="buscarSite()" disabled>Buscar site</button>
+      </div>
+      <div id="resultBuscarSite" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>12. SharePoint — listar bibliotecas do site</h3>
+      <div class="info">
+        Cole o siteId para listar as bibliotecas de documentos (drives) disponíveis
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
+        <input id="siteId" type="text" placeholder="Cole o siteId aqui" style="flex: 1" />
+        <button id="btnListarDrives" onclick="listarDrives()" disabled>Listar bibliotecas</button>
+      </div>
+      <div id="resultDrives" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>13. SharePoint — listar arquivos de uma biblioteca</h3>
+      <div class="info">Cole o siteId e o driveId para listar os arquivos da biblioteca</div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="siteIdArquivos"
+          type="text"
+          placeholder="siteId"
+          style="flex: 1; min-width: 200px"
+        />
+        <input
+          id="driveIdArquivos"
+          type="text"
+          placeholder="driveId"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnListarArquivosSP" onclick="listarArquivosSP()" disabled>
+          Listar arquivos
+        </button>
+      </div>
+      <div id="resultArquivosSP" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>14. SharePoint — tabelas de um arquivo Excel</h3>
+      <div class="info">
+        Cole o siteId, driveId e itemId para listar as tabelas do Excel no SharePoint
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="siteIdTabelas"
+          type="text"
+          placeholder="siteId"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="driveIdTabelas"
+          type="text"
+          placeholder="driveId"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="itemIdTabelas"
+          type="text"
+          placeholder="itemId do Excel"
+          style="flex: 1; min-width: 150px"
+        />
+        <button id="btnTabelasSP" onclick="listarTabelasSP()" disabled>Listar tabelas</button>
+      </div>
+      <div id="resultTabelasSP" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>15. Arquivos compartilhados comigo</h3>
+      <div class="info">GET /me/drive/sharedWithMe — lista arquivos que outros compartilharam</div>
+      <button id="btnShared" onclick="listarCompartilhados()" disabled>
+        Listar compartilhados
+      </button>
+      <div id="resultShared" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>16. Buscar IDs pelo link compartilhado do SharePoint</h3>
+      <div class="info">
+        Cola a URL do arquivo compartilhado — extrai siteId, driveId e itemId automaticamente
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px">
+        <input
+          id="urlCompartilhada"
+          type="text"
+          placeholder="Cole a URL do SharePoint aqui"
+          style="flex: 1"
+        />
+        <button id="btnUrlSP" onclick="buscarPorUrl()" disabled>Buscar IDs</button>
+      </div>
+      <div id="resultUrlSP" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>17. Buscar site DAAER diretamente</h3>
+      <div class="info">Busca o site pelo hostname e path diretamente</div>
+      <button id="btnDAAER" onclick="buscarDAAER()" disabled>Buscar DAAER</button>
+      <div id="resultDAAER" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>18. Buscar arquivo Excel no drive do SharePoint</h3>
+      <div class="info">Busca o arquivo pelo nome dentro de um drive do SharePoint</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="siteIdBusca"
+          type="text"
+          placeholder="siteId"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="driveIdBusca"
+          type="text"
+          placeholder="driveId"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="nomeArquivoSP"
+          type="text"
+          placeholder="Nome do arquivo"
+          style="flex: 1; min-width: 150px"
+        />
+        <button id="btnBuscarSP" onclick="buscarArquivoSP()" disabled>Buscar</button>
+      </div>
+      <div id="resultBuscarSP" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>19. Acessar arquivo pelo link compartilhado</h3>
+      <div class="info">Usa o link de compartilhamento direto para obter o itemId</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px">
+        <input
+          id="linkCompartilhado"
+          type="text"
+          placeholder="Cole o link do SharePoint aqui"
+          style="flex: 1"
+        />
+        <button id="btnLinkSP" onclick="acessarPorLink()" disabled>Buscar</button>
+      </div>
+      <div id="resultLinkSP" class="result">Aguardando login...</div>
+    </div>
+
+    <div class="card sharepoint">
+      <h3>20. Consultar tabela do Excel no SharePoint</h3>
+      <div class="info">
+        Usa os IDs do SharePoint para listar colunas e primeiras linhas de uma tabela
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap">
+        <input
+          id="spSiteId"
+          type="text"
+          placeholder="SP_SITE_ID"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="spDriveId"
+          type="text"
+          placeholder="SP_DRIVE_ID"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="spItemId"
+          type="text"
+          placeholder="SP_ITEM_ID"
+          style="flex: 1; min-width: 150px"
+        />
+        <input
+          id="spTabela"
+          type="text"
+          placeholder="Nome da tabela (ex: tbAcionamentoVoosAR)"
+          style="flex: 1; min-width: 200px"
+        />
+        <button id="btnConsultarSP" onclick="consultarTabelaSP()" disabled>Consultar</button>
+      </div>
+      <div id="resultConsultarSP" class="result">Aguardando login...</div>
+    </div>
+
+    <script>
+      var msalInstance = null;
+      var tokenAtual = null;
+      var botoesPosLogin = [
+        "btnPerfil",
+        "btnOneDrive",
+        "btnBuscar",
+        "btnTabelas",
+        "btnLerTabela",
+        "btnSite",
+        "btnSites",
+        "btnCols",
+        "btnHeader",
+        "btnBuscarSite",
+        "btnListarDrives",
+        "btnListarArquivosSP",
+        "btnTabelasSP",
+        "btnShared",
+        "btnUrlSP",
+        "btnDAAER",
+        "btnBuscarSP",
+        "btnLinkSP",
+        "btnConsultarSP",
+        "btnLogout",
+      ];
+
+      function inicializar() {
+        var clientId = document.getElementById("clientId").value.trim();
+        var tenantId = document.getElementById("tenantId").value.trim();
+        if (!clientId || !tenantId) {
+          alert("Preencha o Client ID e o Tenant ID");
+          return;
+        }
+        msalInstance = new msal.PublicClientApplication({
+          auth: {
+            clientId: clientId,
+            authority: "https://login.microsoftonline.com/" + tenantId,
+            redirectUri: window.location.href.split("?")[0],
+          },
+          cache: { cacheLocation: "sessionStorage" },
+        });
+        msalInstance.initialize().then(function () {
+          document.getElementById("status").textContent = "✅ Configurado — faça o login";
+          document.getElementById("btnLogin").disabled = false;
+        });
+      }
+
+      function getToken() {
+        var accounts = msalInstance.getAllAccounts();
+        return msalInstance
+          .acquireTokenSilent({
+            scopes: ["User.Read", "Files.ReadWrite", "Sites.ReadWrite.All"],
+            account: accounts[0],
+          })
+          .then(function (r) {
+            return r.accessToken;
+          });
+      }
+
+      function fetchGraph(url) {
+        return getToken().then(function (token) {
+          return fetch(url, { headers: { Authorization: "Bearer " + token } }).then(function (r) {
+            return r.json().then(function (d) {
+              return { response: r, data: d };
+            });
+          });
+        });
+      }
+
+      function login() {
+        msalInstance
+          .loginPopup({
+            scopes: [
+              "User.Read",
+              "Files.ReadWrite",
+              "Sites.ReadWrite.All",
+              "openid",
+              "profile",
+              "email",
+            ],
+          })
+          .then(function (result) {
+            tokenAtual = result.accessToken;
+            document.getElementById("resultLogin").className = "result ok";
+            document.getElementById("resultLogin").textContent =
+              "✅ Login realizado!\nNome: " +
+              result.account.name +
+              "\nEmail: " +
+              result.account.username;
+            botoesPosLogin.forEach(function (id) {
+              document.getElementById(id).disabled = false;
+            });
+            document.getElementById("btnLogin").disabled = true;
+          })
+          .catch(function (e) {
+            document.getElementById("resultLogin").className = "result erro";
+            document.getElementById("resultLogin").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function testar(url, elementId) {
+        document.getElementById(elementId).textContent = "Carregando...";
+        fetchGraph(url)
+          .then(function (result) {
+            document.getElementById(elementId).className = result.response.ok
+              ? "result ok"
+              : "result erro";
+            document.getElementById(elementId).textContent =
+              (result.response.ok ? "✅ " : "❌ ") +
+              "Status: " +
+              result.response.status +
+              "\n\n" +
+              JSON.stringify(result.data, null, 2);
+          })
+          .catch(function (e) {
+            document.getElementById(elementId).className = "result erro";
+            document.getElementById(elementId).textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarArquivos() {
+        var path = document.getElementById("pathPasta").value.trim();
+        var url = path
+          ? "https://graph.microsoft.com/v1.0/me/drive/root:/" +
+            encodeURIComponent(path) +
+            ":/children"
+          : "https://graph.microsoft.com/v1.0/me/drive/root/children";
+        document.getElementById("resultOneDrive").textContent = "Carregando...";
+        fetchGraph(url)
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (f) {
+                return (
+                  (f.folder ? "📁" : "📄") +
+                  " " +
+                  f.name +
+                  "\n   ID: " +
+                  f.id +
+                  "\n   Tipo: " +
+                  (f.folder
+                    ? "📁 pasta (" + (f.folder.childCount || 0) + " itens)"
+                    : f.file
+                      ? f.file.mimeType
+                      : "desconhecido") +
+                  "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultOneDrive").className = "result ok";
+            document.getElementById("resultOneDrive").textContent =
+              "✅ " +
+              result.data.value.length +
+              ' itens em "' +
+              (path || "raiz") +
+              '":\n\n' +
+              linhas;
+          })
+          .catch(function (e) {
+            document.getElementById("resultOneDrive").className = "result erro";
+            document.getElementById("resultOneDrive").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function buscarArquivo() {
+        var nome = document.getElementById("nomeArquivo").value.trim();
+        if (!nome) {
+          alert("Digite o nome do arquivo");
+          return;
+        }
+        document.getElementById("resultBusca").textContent = "Buscando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/me/drive/root/search(q='" +
+            encodeURIComponent(nome) +
+            "')",
+        )
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            if (result.data.value.length === 0) {
+              document.getElementById("resultBusca").textContent = "⚠️ Nenhum arquivo encontrado.";
+              return;
+            }
+            var linhas = result.data.value
+              .map(function (f) {
+                return (
+                  "📄 " +
+                  f.name +
+                  "\n   ✅ Drive Item ID: " +
+                  f.id +
+                  "\n   Modificado: " +
+                  f.lastModifiedDateTime +
+                  "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultBusca").className = "result ok";
+            document.getElementById("resultBusca").textContent =
+              "✅ " + result.data.value.length + " resultado(s):\n\n" + linhas;
+            if (result.data.value[0]) {
+              var id = result.data.value[0].id;
+              document.getElementById("driveItemId").value = id;
+              document.getElementById("driveItemIdTabela").value = id;
+              document.getElementById("driveIdCols").value = id;
+              document.getElementById("driveIdHeader").value = id;
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultBusca").className = "result erro";
+            document.getElementById("resultBusca").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarTabelas() {
+        var itemId = document.getElementById("driveItemId").value.trim();
+        if (!itemId) {
+          alert("Cole o Drive Item ID primeiro");
+          return;
+        }
+        document.getElementById("resultTabelas").textContent = "Carregando...";
+        fetchGraph("https://graph.microsoft.com/v1.0/me/drive/items/" + itemId + "/workbook/tables")
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (t) {
+                return "📊 " + t.name + " (id: " + t.id + ")";
+              })
+              .join("\n");
+            document.getElementById("resultTabelas").className = "result ok";
+            document.getElementById("resultTabelas").textContent =
+              "✅ " +
+              result.data.value.length +
+              " tabela(s):\n\n" +
+              linhas +
+              "\n\nVITE_EXCEL_DRIVE_ITEM_ID=" +
+              itemId;
+          })
+          .catch(function (e) {
+            document.getElementById("resultTabelas").className = "result erro";
+            document.getElementById("resultTabelas").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function lerTabela() {
+        var itemId = document.getElementById("driveItemIdTabela").value.trim();
+        var tabela = document.getElementById("nomeTabela").value.trim();
+        if (!itemId || !tabela) {
+          alert("Preencha o Drive Item ID e o nome da tabela");
+          return;
+        }
+        document.getElementById("resultLerTabela").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/me/drive/items/" +
+            itemId +
+            "/workbook/tables/" +
+            tabela +
+            "/rows",
+        )
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var primeiras = result.data.value.slice(0, 3);
+            document.getElementById("resultLerTabela").className = "result ok";
+            document.getElementById("resultLerTabela").textContent =
+              "✅ " +
+              result.data.value.length +
+              " linha(s) — exibindo primeiras 3:\n\n" +
+              JSON.stringify(primeiras, null, 2);
+          })
+          .catch(function (e) {
+            document.getElementById("resultLerTabela").className = "result erro";
+            document.getElementById("resultLerTabela").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarColunas() {
+        var itemId = document.getElementById("driveIdCols").value.trim();
+        var tabela = document.getElementById("nomeTabCols").value.trim();
+        if (!itemId || !tabela) {
+          alert("Preencha o Drive Item ID e o nome da tabela");
+          return;
+        }
+        document.getElementById("resultCols").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/me/drive/items/" +
+            itemId +
+            "/workbook/tables/" +
+            tabela +
+            "/columns",
+        )
+          .then(function (result) {
+            if (!result.response.ok) {
+              document.getElementById("resultCols").className = "result erro";
+              document.getElementById("resultCols").textContent =
+                "❌ Erro:\n" + JSON.stringify(result.data, null, 2);
+              return;
+            }
+            var colunas = (result.data.value || []).map(function (c) {
+              return { id: c.id, index: c.index, name: c.name };
+            });
+            document.getElementById("resultCols").className = "result ok";
+            document.getElementById("resultCols").textContent =
+              "✅ " + colunas.length + " coluna(s):\n\n" + JSON.stringify(colunas, null, 2);
+          })
+          .catch(function (e) {
+            document.getElementById("resultCols").className = "result erro";
+            document.getElementById("resultCols").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarHeader() {
+        var itemId = document.getElementById("driveIdHeader").value.trim();
+        var tabela = document.getElementById("nomeTabHeader").value.trim();
+        if (!itemId || !tabela) {
+          alert("Preencha o Drive Item ID e o nome da tabela");
+          return;
+        }
+        document.getElementById("resultHeader").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/me/drive/items/" +
+            itemId +
+            "/workbook/tables/" +
+            tabela +
+            "/headerRowRange",
+        )
+          .then(function (result) {
+            if (!result.response.ok) {
+              document.getElementById("resultHeader").className = "result erro";
+              document.getElementById("resultHeader").textContent =
+                "❌ Erro:\n" + JSON.stringify(result.data, null, 2);
+              return;
+            }
+            var headers = (result.data.values || [[]])[0];
+            document.getElementById("resultHeader").className = "result ok";
+            document.getElementById("resultHeader").textContent =
+              "✅ " +
+              headers.length +
+              " cabeçalho(s):\n\n" +
+              headers
+                .map(function (h, i) {
+                  return i + ": " + h;
+                })
+                .join("\n");
+          })
+          .catch(function (e) {
+            document.getElementById("resultHeader").className = "result erro";
+            document.getElementById("resultHeader").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      // ── SharePoint ──────────────────────────────────────────────────────────
+
+      function buscarSite() {
+        var nome = document.getElementById("nomeSite").value.trim();
+        if (!nome) {
+          alert("Digite o nome do site");
+          return;
+        }
+        document.getElementById("resultBuscarSite").textContent = "Buscando...";
+        fetchGraph("https://graph.microsoft.com/v1.0/sites?search=" + encodeURIComponent(nome))
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            if (!result.data.value || result.data.value.length === 0) {
+              document.getElementById("resultBuscarSite").textContent =
+                '⚠️ Nenhum site encontrado para "' + nome + '"';
+              return;
+            }
+            var linhas = result.data.value
+              .map(function (s) {
+                return (
+                  "🌐 " + s.displayName + "\n   ✅ siteId: " + s.id + "\n   URL: " + s.webUrl + "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultBuscarSite").className = "result ok";
+            document.getElementById("resultBuscarSite").textContent =
+              "✅ " + result.data.value.length + " site(s) encontrado(s):\n\n" + linhas;
+            if (result.data.value[0]) {
+              document.getElementById("siteId").value = result.data.value[0].id;
+              document.getElementById("siteIdArquivos").value = result.data.value[0].id;
+              document.getElementById("siteIdTabelas").value = result.data.value[0].id;
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultBuscarSite").className = "result erro";
+            document.getElementById("resultBuscarSite").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarDrives() {
+        var siteId = document.getElementById("siteId").value.trim();
+        if (!siteId) {
+          alert("Cole o siteId primeiro");
+          return;
+        }
+        document.getElementById("resultDrives").textContent = "Carregando...";
+        fetchGraph("https://graph.microsoft.com/v1.0/sites/" + siteId + "/drives")
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (d) {
+                return (
+                  "📁 " + d.name + "\n   ✅ driveId: " + d.id + "\n   Tipo: " + d.driveType + "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultDrives").className = "result ok";
+            document.getElementById("resultDrives").textContent =
+              "✅ " + result.data.value.length + " biblioteca(s):\n\n" + linhas;
+            if (result.data.value[0]) {
+              document.getElementById("driveIdArquivos").value = result.data.value[0].id;
+              document.getElementById("driveIdTabelas").value = result.data.value[0].id;
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultDrives").className = "result erro";
+            document.getElementById("resultDrives").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarArquivosSP() {
+        var siteId = document.getElementById("siteIdArquivos").value.trim();
+        var driveId = document.getElementById("driveIdArquivos").value.trim();
+        if (!siteId || !driveId) {
+          alert("Preencha o siteId e o driveId");
+          return;
+        }
+        document.getElementById("resultArquivosSP").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/sites/" +
+            siteId +
+            "/drives/" +
+            driveId +
+            "/root/children",
+        )
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (f) {
+                return (f.folder ? "📁" : "📄") + " " + f.name + "\n   ✅ itemId: " + f.id + "\n";
+              })
+              .join("\n");
+            document.getElementById("resultArquivosSP").className = "result ok";
+            document.getElementById("resultArquivosSP").textContent =
+              "✅ " + result.data.value.length + " item(ns):\n\n" + linhas;
+            var excel = result.data.value.find(function (f) {
+              return f.name && f.name.endsWith(".xlsx");
+            });
+            if (excel) {
+              document.getElementById("itemIdTabelas").value = excel.id;
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultArquivosSP").className = "result erro";
+            document.getElementById("resultArquivosSP").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarTabelasSP() {
+        var siteId = document.getElementById("siteIdTabelas").value.trim();
+        var driveId = document.getElementById("driveIdTabelas").value.trim();
+        var itemId = document.getElementById("itemIdTabelas").value.trim();
+        if (!siteId || !driveId || !itemId) {
+          alert("Preencha siteId, driveId e itemId");
+          return;
+        }
+        document.getElementById("resultTabelasSP").textContent = "Carregando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/sites/" +
+            siteId +
+            "/drives/" +
+            driveId +
+            "/items/" +
+            itemId +
+            "/workbook/tables",
+        )
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (t) {
+                return "📊 " + t.name;
+              })
+              .join("\n");
+            document.getElementById("resultTabelasSP").className = "result ok";
+            document.getElementById("resultTabelasSP").textContent =
+              "✅ " +
+              result.data.value.length +
+              " tabela(s):\n\n" +
+              linhas +
+              "\n\n— IDs para a API —\n" +
+              "SHAREPOINT_SITE_ID=" +
+              siteId +
+              "\n" +
+              "SHAREPOINT_DRIVE_ID=" +
+              driveId +
+              "\n" +
+              "SHAREPOINT_ITEM_ID=" +
+              itemId;
+          })
+          .catch(function (e) {
+            document.getElementById("resultTabelasSP").className = "result erro";
+            document.getElementById("resultTabelasSP").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function listarCompartilhados() {
+        document.getElementById("resultShared").textContent = "Carregando...";
+        fetchGraph("https://graph.microsoft.com/v1.0/me/drive/sharedWithMe")
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            var linhas = result.data.value
+              .map(function (f) {
+                return (
+                  "📄 " +
+                  f.name +
+                  "\n   ✅ itemId: " +
+                  f.id +
+                  "\n   Dono: " +
+                  (f.remoteItem?.sharepointIds?.siteId ? "SharePoint" : "OneDrive") +
+                  "\n   siteId: " +
+                  (f.remoteItem?.sharepointIds?.siteId ?? "—") +
+                  "\n   driveId: " +
+                  (f.remoteItem?.parentReference?.driveId ?? "—") +
+                  "\n   remoteItemId: " +
+                  (f.remoteItem?.id ?? "—") +
+                  "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultShared").className = "result ok";
+            document.getElementById("resultShared").textContent =
+              "✅ " + result.data.value.length + " item(ns):\n\n" + linhas;
+          })
+          .catch(function (e) {
+            document.getElementById("resultShared").className = "result erro";
+            document.getElementById("resultShared").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function buscarPorUrl() {
+        document.getElementById("resultUrlSP").textContent = "Carregando...";
+
+        // Passo 1 — busca o site pelo hostname + path
+        fetchGraph("https://graph.microsoft.com/v1.0/sites/icmbioe5.sharepoint.com:/sites/DAAER")
+          .then(function (siteResult) {
+            if (!siteResult.response.ok) throw siteResult.data;
+            var siteId = siteResult.data.id;
+
+            // Passo 2 — busca as bibliotecas do site
+            return fetchGraph("https://graph.microsoft.com/v1.0/sites/" + siteId + "/drives").then(
+              function (drivesResult) {
+                if (!drivesResult.response.ok) throw drivesResult.data;
+                return { siteId: siteId, drives: drivesResult.data.value };
+              },
+            );
+          })
+          .then(function (ctx) {
+            // Passo 3 — busca o arquivo pelo GUID em cada biblioteca
+            var guid = "E24992BB-EE8A-4D22-9469-398D3DFEC82F";
+            var searches = ctx.drives.map(function (drive) {
+              return fetchGraph(
+                "https://graph.microsoft.com/v1.0/sites/" +
+                  ctx.siteId +
+                  "/drives/" +
+                  drive.id +
+                  "/root/search(q='CONTROLE DE AERONAVE DIVA')",
+              )
+                .then(function (r) {
+                  return { drive: drive, result: r };
+                })
+                .catch(function () {
+                  return null;
+                });
+            });
+
+            return Promise.all(searches).then(function (results) {
+              return { siteId: ctx.siteId, drives: ctx.drives, searches: results };
+            });
+          })
+          .then(function (ctx) {
+            var found = null;
+            ctx.searches.forEach(function (s) {
+              if (!s || !s.result.response.ok) return;
+              var match = (s.result.data.value || []).find(function (f) {
+                return f.name && f.name.includes("CONTROLE DE AERONAVE DIVA");
+              });
+              if (match) found = { drive: s.drive, item: match };
+            });
+
+            if (!found) {
+              document.getElementById("resultUrlSP").textContent =
+                "⚠️ Arquivo não encontrado nas bibliotecas.\n\nSite encontrado:\n" +
+                "siteId: " +
+                ctx.siteId +
+                "\n\nBibliotecas:\n" +
+                ctx.drives
+                  .map(function (d) {
+                    return "  📁 " + d.name + " — driveId: " + d.id;
+                  })
+                  .join("\n");
+              return;
+            }
+
+            var output =
+              "✅ Arquivo encontrado!\n\n" +
+              "📄 " +
+              found.item.name +
+              "\n\n" +
+              "— IDs para a API —\n" +
+              "SHAREPOINT_SITE_ID=" +
+              ctx.siteId +
+              "\n" +
+              "SHAREPOINT_DRIVE_ID=" +
+              found.drive.id +
+              "\n" +
+              "SHAREPOINT_ITEM_ID=" +
+              found.item.id +
+              "\n\n" +
+              "— IDs para o .env —\n" +
+              "SP_SITE_ID=" +
+              ctx.siteId +
+              "\n" +
+              "SP_DRIVE_ID=" +
+              found.drive.id +
+              "\n" +
+              "SP_ITEM_ID=" +
+              found.item.id;
+
+            document.getElementById("resultUrlSP").className = "result ok";
+            document.getElementById("resultUrlSP").textContent = output;
+
+            // Preenche os cards 12, 13 e 14
+            document.getElementById("siteId").value = ctx.siteId;
+            document.getElementById("siteIdArquivos").value = ctx.siteId;
+            document.getElementById("siteIdTabelas").value = ctx.siteId;
+            document.getElementById("driveIdArquivos").value = found.drive.id;
+            document.getElementById("driveIdTabelas").value = found.drive.id;
+            document.getElementById("itemIdTabelas").value = found.item.id;
+          })
+          .catch(function (e) {
+            document.getElementById("resultUrlSP").className = "result erro";
+            document.getElementById("resultUrlSP").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function buscarDAAER() {
+        document.getElementById("resultDAAER").textContent = "Carregando...";
+        fetchGraph("https://graph.microsoft.com/v1.0/sites/icmbioe5.sharepoint.com:/sites/DAAER:")
+          .then(function (result) {
+            document.getElementById("resultDAAER").className = result.response.ok
+              ? "result ok"
+              : "result erro";
+            document.getElementById("resultDAAER").textContent = JSON.stringify(
+              result.data,
+              null,
+              2,
+            );
+            if (result.response.ok) {
+              document.getElementById("siteId").value = result.data.id;
+              document.getElementById("siteIdArquivos").value = result.data.id;
+              document.getElementById("siteIdTabelas").value = result.data.id;
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultDAAER").className = "result erro";
+            document.getElementById("resultDAAER").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function acessarPorLink() {
+        var link = document.getElementById("linkCompartilhado").value.trim();
+        if (!link) {
+          alert("Cole o link");
+          return;
+        }
+        document.getElementById("resultLinkSP").textContent = "Carregando...";
+
+        // Codifica o link em base64 para o formato do Graph API
+        var encoded = btoa(link).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+        var url = "https://graph.microsoft.com/v1.0/shares/u!" + encoded + "/driveItem";
+
+        fetchGraph(url)
+          .then(function (result) {
+            document.getElementById("resultLinkSP").className = result.response.ok
+              ? "result ok"
+              : "result erro";
+            if (result.response.ok) {
+              var item = result.data;
+              document.getElementById("resultLinkSP").textContent =
+                "✅ Arquivo encontrado!\n\n" +
+                "📄 " +
+                item.name +
+                "\n\n" +
+                "— IDs para o .env —\n" +
+                "SP_ITEM_ID=" +
+                item.id +
+                "\n" +
+                "SP_DRIVE_ID=" +
+                item.parentReference.driveId +
+                "\n" +
+                "SP_SITE_ID=" +
+                item.parentReference.siteId +
+                "\n\n" +
+                JSON.stringify(item.parentReference, null, 2);
+              document.getElementById("itemIdTabelas").value = item.id;
+              document.getElementById("driveIdTabelas").value = item.parentReference.driveId;
+              document.getElementById("siteIdTabelas").value = item.parentReference.siteId;
+            } else {
+              document.getElementById("resultLinkSP").textContent =
+                "❌ Erro:\n" + JSON.stringify(result.data, null, 2);
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultLinkSP").className = "result erro";
+            document.getElementById("resultLinkSP").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function buscarArquivoSP() {
+        var siteId = document.getElementById("siteIdBusca").value.trim();
+        var driveId = document.getElementById("driveIdBusca").value.trim();
+        var nome = document.getElementById("nomeArquivoSP").value.trim();
+        if (!siteId || !driveId || !nome) {
+          alert("Preencha todos os campos");
+          return;
+        }
+        document.getElementById("resultBuscarSP").textContent = "Buscando...";
+        fetchGraph(
+          "https://graph.microsoft.com/v1.0/sites/" +
+            siteId +
+            "/drives/" +
+            driveId +
+            "/root/search(q='" +
+            encodeURIComponent(nome) +
+            "')",
+        )
+          .then(function (result) {
+            if (!result.response.ok) throw result.data;
+            if (!result.data.value || result.data.value.length === 0) {
+              document.getElementById("resultBuscarSP").textContent =
+                "⚠️ Nenhum arquivo encontrado.";
+              return;
+            }
+            var linhas = result.data.value
+              .map(function (f) {
+                return (
+                  "📄 " +
+                  f.name +
+                  "\n   ✅ itemId: " +
+                  f.id +
+                  "\n   Caminho: " +
+                  (f.parentReference?.path ?? "—") +
+                  "\n"
+                );
+              })
+              .join("\n");
+            document.getElementById("resultBuscarSP").className = "result ok";
+            document.getElementById("resultBuscarSP").textContent =
+              "✅ " +
+              result.data.value.length +
+              " resultado(s):\n\n" +
+              linhas +
+              "\n\n— IDs para o .env —\n" +
+              "SP_SITE_ID=" +
+              siteId +
+              "\n" +
+              "SP_DRIVE_ID=" +
+              driveId +
+              "\n" +
+              "SP_ITEM_ID=" +
+              (result.data.value[0]?.id ?? "");
+            if (result.data.value[0]) {
+              document.getElementById("itemIdTabelas").value = result.data.value[0].id;
+              document.getElementById("siteIdTabelas").value = siteId;
+              document.getElementById("driveIdTabelas").value = driveId;
+            }
+          })
+          .catch(function (e) {
+            document.getElementById("resultBuscarSP").className = "result erro";
+            document.getElementById("resultBuscarSP").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function consultarTabelaSP() {
+        var siteId = document.getElementById("spSiteId").value.trim();
+        var driveId = document.getElementById("spDriveId").value.trim();
+        var itemId = document.getElementById("spItemId").value.trim();
+        var tabela = document.getElementById("spTabela").value.trim();
+        if (!siteId || !driveId || !itemId || !tabela) {
+          alert("Preencha todos os campos");
+          return;
+        }
+
+        var base =
+          "https://graph.microsoft.com/v1.0/drives/" +
+          driveId +
+          "/items/" +
+          itemId +
+          "/workbook/tables/" +
+          tabela;
+
+        document.getElementById("resultConsultarSP").textContent = "Carregando...";
+
+        Promise.all([fetchGraph(base + "/headerRowRange"), fetchGraph(base + "/rows")])
+          .then(function (results) {
+            var headersResult = results[0];
+            var rowsResult = results[1];
+
+            if (!headersResult.response.ok) throw headersResult.data;
+            if (!rowsResult.response.ok) throw rowsResult.data;
+
+            var headers = (headersResult.data.values || [[]])[0];
+            var rows = rowsResult.data.value || [];
+            var primeiras = rows.slice(0, 3);
+
+            var output =
+              "✅ Tabela: " +
+              tabela +
+              "\n" +
+              "📊 " +
+              headers.length +
+              " coluna(s) | " +
+              rows.length +
+              " linha(s)\n\n" +
+              "— Colunas —\n" +
+              headers
+                .map(function (h, i) {
+                  return i + ": " + h;
+                })
+                .join("\n") +
+              "\n\n— Primeiras 3 linhas —\n" +
+              primeiras
+                .map(function (r, i) {
+                  var obj = {};
+                  headers.forEach(function (h, j) {
+                    obj[h] = r.values[0][j];
+                  });
+                  return "Linha " + (i + 1) + ":\n" + JSON.stringify(obj, null, 2);
+                })
+                .join("\n\n");
+
+            document.getElementById("resultConsultarSP").className = "result ok";
+            document.getElementById("resultConsultarSP").textContent = output;
+          })
+          .catch(function (e) {
+            document.getElementById("resultConsultarSP").className = "result erro";
+            document.getElementById("resultConsultarSP").textContent =
+              "❌ Erro:\n" + JSON.stringify(e, null, 2);
+          });
+      }
+
+      function logout() {
+        msalInstance.logoutPopup();
+        tokenAtual = null;
+        botoesPosLogin.forEach(function (id) {
+          document.getElementById(id).disabled = true;
+        });
+        document.getElementById("btnLogin").disabled = false;
+        document.getElementById("resultLogin").textContent = "Logout realizado.";
+        document.getElementById("status").textContent = "✅ Configurado — faça o login";
+      }
+    </script>
+  </body>
+</html>
+
